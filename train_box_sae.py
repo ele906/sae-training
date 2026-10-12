@@ -114,6 +114,7 @@ def evaluate(sae, head, rows, boxes_by_id, residual_dir, device, recon_weight, o
     sae.eval()
     total_loss = 0.0
     records = {c: {"scores": [], "labels": [], "ious": [], "detected_iou50": []} for c in range(2)}
+    predictions = []
     for row in rows:
         residual = torch.from_numpy(np.load(residual_dir / f"{row['sample_id']}.npy", allow_pickle=False).astype(np.float32)).to(device)
         recons, pred = forward_one(sae, head, residual)
@@ -131,6 +132,10 @@ def evaluate(sae, head, rows, boxes_by_id, residual_dir, device, recon_weight, o
             score = float(scores[best])
             records[c]["scores"].append(score)
             records[c]["labels"].append(gt is not None)
+            predictions.append(dict(sample_id=row["sample_id"], split=row["split"], concept=concepts[c],
+                                    score=score, predicted_box_xyxy_normalized=json.dumps(pred_box),
+                                    c2c_box_xyxy_normalized="" if gt is None else json.dumps(gt),
+                                    iou="" if gt is None else iou(pred_box, gt)))
             if gt is not None:
                 overlap = iou(pred_box, gt)
                 records[c]["ious"].append(overlap)
@@ -145,7 +150,7 @@ def evaluate(sae, head, rows, boxes_by_id, residual_dir, device, recon_weight, o
             "mean_iou_on_c2c_positive": float(np.mean(r["ious"])) if r["ious"] else None,
             "recall_at_score_0p5_and_iou_0p5": float(np.mean(r["detected_iou50"])) if r["detected_iou50"] else None,
         }
-    return result
+    return result, predictions
 
 
 def main():
@@ -160,6 +165,7 @@ def main():
     parser.add_argument("--objectness-weight", type=float, default=1.0)
     parser.add_argument("--box-weight", type=float, default=5.0)
     parser.add_argument("--positive-weight", type=float, default=32.0)
+    parser.add_argument("--freeze-sae", action="store_true", help="Train only the detection head as a frozen-SAE baseline")
     parser.add_argument("--seed", type=int, default=17)
     args = parser.parse_args()
     if args.epochs < 1:
@@ -202,6 +208,9 @@ def main():
     checkpoint = Path(gen_settings["sae_checkpoint"])
     sae = SparseAutoencoder.load_from_disk(str(checkpoint)).float().to(device)
     sae.train()
+    if args.freeze_sae:
+        sae.eval()
+        sae.requires_grad_(False)
     example_path = next(args.residuals.glob("*.npy"))
     example = np.load(example_path, mmap_mode="r", allow_pickle=False)
     spatial_shape = list(example.shape[:2])
@@ -209,10 +218,10 @@ def main():
         raise ValueError(f"Residual dimension {example.shape[-1]} != SAE input {sae.d_model}")
     del example
     head = make_head(sae.n_dirs, len(concepts)).to(device)
-    optimizer = torch.optim.Adam([
-        {"params": sae.parameters(), "lr": args.sae_lr},
-        {"params": head.parameters(), "lr": args.head_lr},
-    ])
+    optimizer_groups = [{"params": head.parameters(), "lr": args.head_lr}]
+    if not args.freeze_sae:
+        optimizer_groups.insert(0, {"params": sae.parameters(), "lr": args.sae_lr})
+    optimizer = torch.optim.Adam(optimizer_groups)
     train_ids = [r["sample_id"] for r in train]
     val_ids = [r["sample_id"] for r in val]
     test_ids = [r["sample_id"] for r in test]
@@ -221,7 +230,7 @@ def main():
     history = []
     args.output.mkdir(parents=True)
     for epoch in range(args.epochs):
-        sae.train()
+        sae.eval() if args.freeze_sae else sae.train()
         head.train()
         order = list(train_ids)
         random.shuffle(order)
@@ -236,17 +245,19 @@ def main():
             if not torch.isfinite(loss):
                 raise FloatingPointError(f"Nonfinite loss at epoch {epoch+1}, sample {sid}")
             loss.backward()
-            unit_norm_decoder_grad_adjustment_(sae)
+            if not args.freeze_sae:
+                unit_norm_decoder_grad_adjustment_(sae)
             optimizer.step()
-            with torch.no_grad():
-                unit_norm_decoder_(sae)
+            if not args.freeze_sae:
+                with torch.no_grad():
+                    unit_norm_decoder_(sae)
             epoch_loss += float(loss.detach())
             if step % 100 == 0:
                 print(f"epoch={epoch+1} step={step}/{len(order)} loss={float(loss.detach()):.5f}", flush=True)
             del residual, reconstruction, pred, loss
-        validation = evaluate(sae, head, val, boxes_by_id, args.residuals, device,
-                              args.reconstruction_weight, args.objectness_weight,
-                              args.box_weight, args.positive_weight)
+        validation, _ = evaluate(sae, head, val, boxes_by_id, args.residuals, device,
+                                 args.reconstruction_weight, args.objectness_weight,
+                                 args.box_weight, args.positive_weight)
         record = {"epoch": epoch+1, "train_loss": epoch_loss/len(order), **validation}
         history.append(record)
         print(json.dumps(record), flush=True)
@@ -257,21 +268,27 @@ def main():
     torch.save(best_head.state_dict(), args.output / "box_head.pth")
     final_sae = best_sae.to(device).eval()
     final_head = best_head.to(device).eval()
-    test_metrics = evaluate(final_sae, final_head, test, boxes_by_id, args.residuals, device,
-                            args.reconstruction_weight, args.objectness_weight,
-                            args.box_weight, args.positive_weight)
+    test_metrics, test_predictions = evaluate(final_sae, final_head, test, boxes_by_id, args.residuals, device,
+                                              args.reconstruction_weight, args.objectness_weight,
+                                              args.box_weight, args.positive_weight)
+    with (args.output / "test_predictions.csv").open("w", newline="") as f:
+        fields = list(test_predictions[0])
+        writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(test_predictions)
     (args.output / "training_history.json").write_text(json.dumps(history, indent=2, allow_nan=False) + "\n")
     (args.output / "test_metrics.json").write_text(json.dumps(test_metrics, indent=2, allow_nan=False) + "\n")
     settings = dict(targets=str(args.targets.resolve()), residuals=str(args.residuals.resolve()),
                     epochs=args.epochs, sae_lr=args.sae_lr, head_lr=args.head_lr,
                     reconstruction_weight=args.reconstruction_weight, objectness_weight=args.objectness_weight,
                     box_weight=args.box_weight, positive_weight=args.positive_weight,
-                    seed=args.seed, block=BLOCK, spatial_shape=spatial_shape,
+                    seed=args.seed, block=BLOCK, spatial_shape=spatial_shape, freeze_sae=args.freeze_sae,
                     train_images=len(train_ids), validation_images=len(val_ids), test_images=len(test_ids),
                     best_validation_loss=best_loss,
                     interpretation="Held-out box agreement with C2C teacher labels; not independent box accuracy")
     (args.output / "settings.json").write_text(json.dumps(settings, indent=2) + "\n")
-    report = ["# C2C-supervised SAE box prediction", "", "Held-out test performance against C2C boxes.", "",
+    title = "Frozen-SAE box-head baseline" if args.freeze_sae else "C2C-supervised SAE box prediction"
+    report = [f"# {title}", "", "Held-out test performance against C2C boxes.", "",
               "```json", json.dumps(test_metrics, indent=2, allow_nan=False), "```", "",
               "This measures imitation of C2C box labels, not independent localization accuracy."]
     (args.output / "REPORT.md").write_text("\n".join(report) + "\n")

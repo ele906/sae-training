@@ -20,7 +20,7 @@ Train an SAE with a small box-prediction head so it predicts *kimono* and *flowe
 3. **Run a frozen-SAE probe baseline first.** Train the existing linear probe (`backprop/train_probe.py`) on C2C targets and pooled SAE activations for each label. This measures whether current SAE codes already contain linearly accessible concept information and yields candidate features. It does not train an SAE and its candidate IDs are associations, not causal controls.
 4. **Collect residual activations.** `capture_residuals.py` replays the original prompt/seed and requires exact RGB equality. It saves one float16 spatial residual array per sample. Submit `capture_residuals.slurm` on the lab GPU cluster.
 5. **Train the SAE and box head jointly.** `train_box_sae.py` initializes the SAE from the pretrained checkpoint and adds per-concept objectness and box regression over spatial SAE codes. It combines normalized reconstruction loss, objectness loss, and box regression loss. The SAE is fine-tuned on train images; validation loss selects the checkpoint; test images remain held out. The target box is the union of C2C's matching boxes for each image/concept. Submit `train_box_sae.slurm` after residual capture completes.
-6. **Evaluate imitation and representation separately.** The run writes held-out box AP, IoU, recall, and validation history under its run directory. These metrics measure agreement with C2C; visual review or independent annotations are needed to claim the boxes are correct in the images. The current trainer does not yet report a frozen-SAE detection-head baseline or prompt-group slices; add those before making comparative claims.
+6. **Evaluate imitation and representation separately.** The run writes held-out box AP, IoU, recall, per-image predictions, and validation history under its run directory. These metrics measure agreement with C2C; visual review or independent annotations are needed to claim the boxes are correct in the images. Run the frozen-SAE baseline with `train_box_baseline.slurm` to see whether SAE fine-tuning improves over the original codes.
 
 ## Running the first experiment
 
@@ -32,9 +32,11 @@ mkdir -p sae-training/logs
 sbatch sae-training/capture_residuals.slurm
 # After residual capture completes successfully:
 sbatch sae-training/train_box_sae.slurm
+# Matched baseline (can run independently once residual capture completes):
+sbatch sae-training/train_box_baseline.slurm
 ```
 
-The current replay job is 4088384. Training checkpoints, residual arrays, and run outputs are excluded from Git.
+Residual capture job 4088384 completed for all 1,200 images with exact RGB replay. First SAE run 4088439 completed; its held-out metrics are being compared with a frozen-SAE baseline. Training checkpoints, residual arrays, and run outputs are excluded from Git.
 
 ## Guardrails
 
