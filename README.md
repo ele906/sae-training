@@ -18,9 +18,23 @@ Train an SAE with a small box-prediction head so it predicts *kimono* and *flowe
 1. **Use C2C targets.** `c2c_targets.csv` maps the existing detector phrases to binary labels. Keep the exact phrase rules and source CSV hash in run settings.
 2. **Check feasibility before training.** Report class counts by split and race/gender prompt cell. Require train and validation positives and negatives; require both classes within at least two prompt cells for a first controlled result. If labels are too sparse or correlated with prompt group, mark that limitation and avoid a concept-specific claim.
 3. **Run a frozen-SAE probe baseline first.** Train the existing linear probe (`backprop/train_probe.py`) on C2C targets and pooled SAE activations for each label. This measures whether current SAE codes already contain linearly accessible concept information and yields candidate features. It does not train an SAE and its candidate IDs are associations, not causal controls.
-4. **Collect residual activations.** Current files save pooled SAE codes, not the spatial residuals needed to train an SAE or box head. Replay the existing images through SDXL and save the residual grid at `unet.down_blocks.2.attentions.1`, with sample IDs and split metadata. Do not use test samples to train.
-5. **Train the SAE and box head jointly.** Initialize the SAE from the pretrained checkpoint. Add an objectness score and box-regression head over the spatial SAE codes. Optimize reconstruction loss plus the existing Top-K sparsity behavior, plus objectness and box losses against the C2C boxes. Only train the head on train images; tune loss weights on validation. Use all valid matching C2C boxes per image/concept, including multiple boxes.
-6. **Evaluate imitation and representation separately.** On validation and held-out test images, report box AP/IoU against C2C, reconstruction MSE / explained variance, sparsity and dead-feature rate, and metrics by prompt group. Compare with the frozen SAE plus the same detection head. Inspect predicted boxes and spatial maps. This measures agreement with C2C; visual review or independent annotations are needed to claim the boxes are correct in the images.
+4. **Collect residual activations.** `capture_residuals.py` replays the original prompt/seed and requires exact RGB equality. It saves one float16 spatial residual array per sample. Submit `capture_residuals.slurm` on the lab GPU cluster.
+5. **Train the SAE and box head jointly.** `train_box_sae.py` initializes the SAE from the pretrained checkpoint and adds per-concept objectness and box regression over spatial SAE codes. It combines normalized reconstruction loss, objectness loss, and box regression loss. The SAE is fine-tuned on train images; validation loss selects the checkpoint; test images remain held out. The target box is the union of C2C's matching boxes for each image/concept. Submit `train_box_sae.slurm` after residual capture completes.
+6. **Evaluate imitation and representation separately.** The run writes held-out box AP, IoU, recall, and validation history under its run directory. These metrics measure agreement with C2C; visual review or independent annotations are needed to claim the boxes are correct in the images. The current trainer does not yet report a frozen-SAE detection-head baseline or prompt-group slices; add those before making comparative claims.
+
+## Running the first experiment
+
+From the workspace root:
+
+```bash
+python sae-training/prepare_box_targets.py
+mkdir -p sae-training/logs
+sbatch sae-training/capture_residuals.slurm
+# After residual capture completes successfully:
+sbatch sae-training/train_box_sae.slurm
+```
+
+The current replay job is 4088384. Training checkpoints, residual arrays, and run outputs are excluded from Git.
 
 ## Guardrails
 
