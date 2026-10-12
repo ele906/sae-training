@@ -38,6 +38,15 @@ sbatch sae-training/train_box_baseline.slurm
 
 Residual capture job 4088384 completed for all 1,200 images with exact RGB replay. The five-epoch fine-tuned run and matched frozen-SAE baseline completed; see [first-run results](RESULTS.md). Kimono IoU did not improve, and flower box localization remains poor. Training checkpoints, residual arrays, and run outputs are excluded from Git.
 
+## Visual results
+
+These held-out examples show the original image, C2C target (orange), frozen-SAE box (blue), and fine-tuned-SAE box (green). The selected sheet includes low, middle, and high fine-tuned IoU positives plus the highest-score C2C-negative image. Full positive test pages are alongside them.
+
+- [Kimono examples](visualizations/kimono_examples.jpg) · [all kimono positives](visualizations/)
+- [Flower examples](visualizations/flower_examples.jpg) · [all flower positives](visualizations/)
+
+Recreate the sheets with `python sae-training/render_box_comparisons.py` after the ignored run outputs have been generated locally.
+
 ## Guardrails
 
 - Split by the existing sample split; never use test labels for model choice, feature ranking, or auxiliary-loss tuning.
