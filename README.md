@@ -36,7 +36,7 @@ sbatch sae-training/train_box_sae.slurm
 sbatch sae-training/train_box_baseline.slurm
 ```
 
-Residual capture job 4088384 completed for all 1,200 images with exact RGB replay. First SAE run 4088439 completed; its held-out metrics are being compared with a frozen-SAE baseline. Training checkpoints, residual arrays, and run outputs are excluded from Git.
+Residual capture job 4088384 completed for all 1,200 images with exact RGB replay. The five-epoch fine-tuned run and matched frozen-SAE baseline completed; see [first-run results](RESULTS.md). Kimono IoU did not improve, and flower box localization remains poor. Training checkpoints, residual arrays, and run outputs are excluded from Git.
 
 ## Guardrails
 
