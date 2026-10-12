@@ -157,7 +157,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--targets", type=Path, default=HERE / "c2c_box_targets.csv")
     parser.add_argument("--residuals", type=Path, default=HERE / "residuals")
-    parser.add_argument("--output", type=Path, default=HERE / "runs/c2c_box_sae_001")
+    parser.add_argument("--output", type=Path, default=HERE / "runs/c2c_box_sae_002")
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--sae-lr", type=float, default=1e-6)
     parser.add_argument("--head-lr", type=float, default=1e-3)
