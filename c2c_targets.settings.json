@@ -1,0 +1,10 @@
+{
+  "source": "concept/concept_predictions.csv",
+  "source_sha256": "6bf84c39e01cb93cbbec62553ad459ea2ecd9b9fb327300482fff60392a34da7",
+  "label_rules": {
+    "kimono_present": "\\bkimono\\b",
+    "flower_present": "\\bflowers?\\b"
+  },
+  "rows": 1200,
+  "interpretation": "C2C detector outputs accepted as working labels for exploratory training; not human-verified"
+}
