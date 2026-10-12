@@ -14,4 +14,4 @@ cd /n/fs/goose
 export OMP_NUM_THREADS=4
 export MKL_NUM_THREADS=4
 /n/fs/goose/el8403/conda-envs/reno/bin/python -u sae-training/train_box_sae.py \
-  --freeze-sae --output sae-training/runs/frozen_sae_box_baseline_001
+  --freeze-sae --output sae-training/runs/frozen_sae_box_baseline_002

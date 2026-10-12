@@ -14,6 +14,7 @@ import torch.nn.functional as F
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 BLOCK = "unet.down_blocks.2.attentions.1"
+CONCEPTS = ("kimono", "flower")
 
 
 def read_csv(path):
@@ -132,7 +133,7 @@ def evaluate(sae, head, rows, boxes_by_id, residual_dir, device, recon_weight, o
             score = float(scores[best])
             records[c]["scores"].append(score)
             records[c]["labels"].append(gt is not None)
-            predictions.append(dict(sample_id=row["sample_id"], split=row["split"], concept=concepts[c],
+            predictions.append(dict(sample_id=row["sample_id"], split=row["split"], concept=CONCEPTS[c],
                                     score=score, predicted_box_xyxy_normalized=json.dumps(pred_box),
                                     c2c_box_xyxy_normalized="" if gt is None else json.dumps(gt),
                                     iou="" if gt is None else iou(pred_box, gt)))
@@ -157,7 +158,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--targets", type=Path, default=HERE / "c2c_box_targets.csv")
     parser.add_argument("--residuals", type=Path, default=HERE / "residuals")
-    parser.add_argument("--output", type=Path, default=HERE / "runs/c2c_box_sae_002")
+    parser.add_argument("--output", type=Path, default=HERE / "runs/c2c_box_sae_003")
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--sae-lr", type=float, default=1e-6)
     parser.add_argument("--head-lr", type=float, default=1e-3)
@@ -182,7 +183,7 @@ def main():
     pairs = [(r["sample_id"], r["concept"]) for r in rows]
     if len(pairs) != len(set(pairs)) or any(r["split"] not in ("train", "validation", "test") for r in rows):
         raise ValueError("Expected one row per image/concept pair with valid splits")
-    concepts = ("kimono", "flower")
+    concepts = CONCEPTS
     boxes_by_id = {}
     sample_meta = {}
     for row in rows:
