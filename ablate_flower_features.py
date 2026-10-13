@@ -39,9 +39,10 @@ def main():
     import torch
     from PIL import Image, ImageDraw
     from diffusers import AutoencoderKL, EulerAncestralDiscreteScheduler
+    sys.path.insert(0, str(ROOT / "sdxl-unbox"))
+    sys.path.insert(0, str(ROOT / "sdxl-unbox/scripts"))
     from SDLens import HookedStableDiffusionXLPipeline
     from SAE import SparseAutoencoder
-    sys.path.insert(0, str(ROOT / "sdxl-unbox/scripts"))
     from sae_experiment import intervention
 
     torch.set_num_threads(4)
