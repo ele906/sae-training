@@ -23,4 +23,20 @@ Run date: 2026-10-12. We ranked SAE features by their contribution to the traine
 
 The target-feature ablation changed pixels substantially (mean RGB MAE 11.01/255 at strength 0, 6.21/255 at 0.5); the random-feature control averaged 1.52/255. Changes were similar for C2C-positive and negative examples, which suggests these features are not specific to flower presence. In the inspected C2C-positive examples, the flower hair ornament remained visible after ablation. The intervention altered other appearance details, including clothing and facial appearance. So this test did not remove the flower, despite changing the image.
 
-This is a small exploratory causal test using a learned detector head to select SAE features. C2C labels are assumed correct, and pixel MAE measures overall image change rather than flower removal. Visual comparisons and per-image pixel metrics are in [`visualizations/flower_intervention_001/`](visualizations/flower_intervention_001/).
+### Example images
+
+Each strip shows source, exact replay, selected flower features zeroed, features attenuated by half, the no-op check, and the random-feature control.
+
+**C2C-positive example (seed 007):**
+
+![Positive flower example, seed 007](visualizations/flower_intervention_001/positive_seed007.jpg)
+
+**C2C-positive example (seed 009):**
+
+![Positive flower example, seed 009](visualizations/flower_intervention_001/positive_seed009.jpg)
+
+**C2C-negative example (seed 086):**
+
+![Negative flower example, seed 086](visualizations/flower_intervention_001/negative_seed086.jpg)
+
+This is a small exploratory causal test using a learned detector head to select SAE features. C2C labels are assumed correct, and pixel MAE measures overall image change rather than flower removal. Per-image pixel metrics are in [`visualizations/flower_intervention_001/metrics.csv`](visualizations/flower_intervention_001/metrics.csv).
