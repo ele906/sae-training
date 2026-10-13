@@ -30,9 +30,14 @@ def main():
     parser.add_argument("--output", type=Path, default=HERE / "runs/flower_intervention_001")
     parser.add_argument("--features", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261012)
+    parser.add_argument("--num-inference-steps", type=int, default=1)
+    parser.add_argument("--positive-limit", type=int)
+    parser.add_argument("--negative-limit", type=int)
     args = parser.parse_args()
     if args.features < 1:
         parser.error("--features must be positive")
+    if args.num_inference_steps < 1:
+        parser.error("--num-inference-steps must be positive")
     if args.output.exists():
         raise ValueError(f"Output exists; choose a fresh directory: {args.output}")
 
@@ -109,12 +114,16 @@ def main():
     manifest = {r["sample_id"]: r for r in read_csv(args.manifest)}
     test_rows = [r for r in targets if r["concept"] == "flower" and r["split"] == "test"
                  and (r["race_prompt"], r["gender_prompt"]) == GROUP]
-    selected = [r for r in test_rows if int(r["detector_present"]) == 1]
+    positives_test = [r for r in test_rows if int(r["detector_present"]) == 1]
     negatives_test = [r for r in test_rows if int(r["detector_present"]) == 0]
-    if not selected or not negatives_test:
+    if not positives_test or not negatives_test:
         raise ValueError("Need held-out positive and negative images in the selected prompt group")
     # All matched positives and negatives keep the test set independent of feature selection.
-    selected.extend(negatives_test)
+    if args.positive_limit is not None:
+        positives_test = positives_test[:args.positive_limit]
+    if args.negative_limit is not None:
+        negatives_test = negatives_test[:args.negative_limit]
+    selected = positives_test + negatives_test
 
     load = dict(torch_dtype=torch.float16, cache_dir=str(ROOT / "ReNO/hf_cache"), local_files_only=True)
     vae = AutoencoderKL.from_pretrained(settings["vae"], **load)
@@ -134,6 +143,7 @@ def main():
         sae_checkpoint=str(args.sae_checkpoint), box_head=str(args.head), block=BLOCK,
         selection_group=GROUP, train_positive=len(positive), train_negative=len(negative),
         selected_features=chosen, random_control=control, strengths=[0, 0.5, 1],
+        num_inference_steps=args.num_inference_steps,
         test_positive=sum(int(r["detector_present"]) for r in selected),
         test_negative=sum(not int(r["detector_present"]) for r in selected),
         target='C2C flower boxes', interpretation='Fixed SAE feature ablation during generation; inspect pictures for object removal and collateral changes'), indent=2) + "\n")
@@ -145,12 +155,12 @@ def main():
         def gen_args():
             return dict(prompt=row["prompt"],
                         latents=torch.randn((1, 4, 64, 64), generator=torch.Generator("cuda").manual_seed(seed), device="cuda", dtype=torch.float16),
-                        generator=torch.Generator("cuda").manual_seed(seed), num_inference_steps=1,
+                        generator=torch.Generator("cuda").manual_seed(seed), num_inference_steps=args.num_inference_steps,
                         guidance_scale=0.0, height=512, width=512)
         original = Image.open(ROOT / "backprop" / row["image"]).convert("RGB")
         replay = pipe.pipe(**gen_args()).images[0]
         replay_mae = float(np.abs(np.asarray(original).astype(float)-np.asarray(replay).astype(float)).mean())
-        if replay_mae != 0:
+        if args.num_inference_steps == 1 and replay_mae != 0:
             raise RuntimeError(f"Source replay mismatch for {row['sample_id']}: MAE={replay_mae}")
         variants = [("source", original), ("replay", replay)]
         for alpha, label in [(0.0, "features_zero"), (0.5, "features_half"), (1.0, "features_noop")]:

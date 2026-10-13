@@ -40,3 +40,21 @@ Each strip shows source, exact replay, selected flower features zeroed, features
 ![Negative flower example, seed 086](visualizations/flower_intervention_001/negative_seed086.jpg)
 
 This is a small exploratory causal test using a learned detector head to select SAE features. C2C labels are assumed correct, and pixel MAE measures overall image change rather than flower removal. Per-image pixel metrics are in [`visualizations/flower_intervention_001/metrics.csv`](visualizations/flower_intervention_001/metrics.csv).
+
+## Did box fine-tuning improve flower information?
+
+We compared the frozen SAE and the SAE fine-tuned with the C2C box objective on the same East Asian woman prompt group. Individual SAE features were scored by their maximum activation over the 16 x 16 grid. We ranked features on the 60 training images (33 C2C-positive, 27 negative), then measured the top 10 features on 20 held-out images (12 positive, 8 negative). The median held-out AUC among these train-selected features was 0.578 for the frozen SAE and 0.531 for the fine-tuned SAE. Fine-tuning therefore did not make individual features more reliable flower detectors in this small test.
+
+The separately trained box head did rank the same held-out images somewhat better after fine-tuning: flower AUC was 0.792 vs. 0.729 for the frozen-SAE head; average precision was 0.892 vs. 0.844. This suggests the head learned a more useful combination of spatial codes, while individual SAE features did not become more concept-specific. These estimates are noisy because there are only 20 held-out images and labels are automatic. Per-feature scores are in [`visualizations/flower_auc_frozen_vs_finetuned_001/feature_auc.csv`](visualizations/flower_auc_frozen_vs_finetuned_001/feature_auc.csv), with cohort details in the adjacent JSON.
+
+### What backpropagation updated
+
+Training started from the pretrained Top-K SAE checkpoint. For each training image, the SAE encoded the SDXL residual into sparse spatial codes and decoded a reconstruction; a small 1 x 1 convolutional head read the codes and predicted flower/kimono presence and box coordinates at each grid cell. The loss combined normalized reconstruction MSE (weight 1), objectness binary cross-entropy (weight 1, with positive weight 32), and box Smooth L1 regression (weight 5). `loss.backward()` propagated gradients through the prediction head and SAE. Adam used learning rates 1e-3 for the head and 1e-6 for the SAE; decoder weights were renormalized after updates. Training ran for five epochs, and the checkpoint with the lowest validation loss was selected. The frozen baseline used the same objective and data but updated only the head. This taught the SAE to support box prediction; it did not directly train a dedicated flower unit or an object-removal operation.
+
+## Four-step generation check
+
+We repeated feature ablation on four held-out C2C-positive and four negative prompts using four inference steps, with same-prompt, same-seed four-step replays as the image baseline. Zeroing the three selected flower features changed images by mean RGB MAE 28.90/255; half attenuation changed them by 19.70/255; the random-feature control changed them by 6.84/255. However, the four-step replays already differed strongly from the original one-step images (mean MAE 66.64/255 for positives and 57.99/255 for negatives). The flower ornament remained visible in the inspected positive example, while the image style shifted substantially. In this SDXL Turbo setup, four steps amplified the intervention and also caused substantial baseline drift, so it did not solve flower removal.
+
+![Four-step positive flower comparison: one-step source, four-step replay, feature ablations, no-op, and random control](visualizations/flower_intervention_4step_001/positive_seed007.jpg)
+
+Per-image measurements are in [`visualizations/flower_intervention_4step_001/metrics.csv`](visualizations/flower_intervention_4step_001/metrics.csv).

@@ -1,0 +1,215 @@
+{
+  "cohort": "East Asian woman prompts; C2C flower labels",
+  "train_images": 60,
+  "train_positive": 33,
+  "train_negative": 27,
+  "test_images": 20,
+  "test_positive": 12,
+  "test_negative": 8,
+  "feature_score": "maximum SAE activation across 16x16 spatial cells per image",
+  "selection": "rank individual features by train AUC; evaluate selected IDs on held-out test",
+  "models": {
+    "frozen": {
+      "selected_features": [
+        {
+          "model": "frozen",
+          "rank": 1,
+          "feature": 1106,
+          "train_auc": 0.6604938271604939,
+          "test_auc": 0.40625,
+          "train_positive_active": 18,
+          "test_positive_active": 5
+        },
+        {
+          "model": "frozen",
+          "rank": 2,
+          "feature": 3400,
+          "train_auc": 0.6599326599326599,
+          "test_auc": 0.6041666666666666,
+          "train_positive_active": 33,
+          "test_positive_active": 10
+        },
+        {
+          "model": "frozen",
+          "rank": 3,
+          "feature": 2985,
+          "train_auc": 0.6554433221099888,
+          "test_auc": 0.6354166666666666,
+          "train_positive_active": 19,
+          "test_positive_active": 8
+        },
+        {
+          "model": "frozen",
+          "rank": 4,
+          "feature": 1817,
+          "train_auc": 0.643658810325477,
+          "test_auc": 0.5729166666666666,
+          "train_positive_active": 32,
+          "test_positive_active": 10
+        },
+        {
+          "model": "frozen",
+          "rank": 5,
+          "feature": 240,
+          "train_auc": 0.6374859708193041,
+          "test_auc": 0.53125,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "frozen",
+          "rank": 6,
+          "feature": 69,
+          "train_auc": 0.6318742985409652,
+          "test_auc": 0.5104166666666666,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "frozen",
+          "rank": 7,
+          "feature": 723,
+          "train_auc": 0.6206509539842873,
+          "test_auc": 0.453125,
+          "train_positive_active": 17,
+          "test_positive_active": 5
+        },
+        {
+          "model": "frozen",
+          "rank": 8,
+          "feature": 2874,
+          "train_auc": 0.6206509539842873,
+          "test_auc": 0.625,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "frozen",
+          "rank": 9,
+          "feature": 4362,
+          "train_auc": 0.6206509539842873,
+          "test_auc": 0.5833333333333334,
+          "train_positive_active": 13,
+          "test_positive_active": 2
+        },
+        {
+          "model": "frozen",
+          "rank": 10,
+          "feature": 1660,
+          "train_auc": 0.6195286195286195,
+          "test_auc": 0.7760416666666666,
+          "train_positive_active": 31,
+          "test_positive_active": 11
+        }
+      ],
+      "best_test_auc_among_train_selected": 0.7760416666666666,
+      "median_test_auc_among_train_selected": 0.578125
+    },
+    "finetuned": {
+      "selected_features": [
+        {
+          "model": "finetuned",
+          "rank": 1,
+          "feature": 3400,
+          "train_auc": 0.6644219977553311,
+          "test_auc": 0.59375,
+          "train_positive_active": 33,
+          "test_positive_active": 10
+        },
+        {
+          "model": "finetuned",
+          "rank": 2,
+          "feature": 723,
+          "train_auc": 0.6386083052749719,
+          "test_auc": 0.4427083333333333,
+          "train_positive_active": 17,
+          "test_positive_active": 5
+        },
+        {
+          "model": "finetuned",
+          "rank": 3,
+          "feature": 240,
+          "train_auc": 0.6374859708193041,
+          "test_auc": 0.53125,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "finetuned",
+          "rank": 4,
+          "feature": 1817,
+          "train_auc": 0.6374859708193041,
+          "test_auc": 0.6041666666666666,
+          "train_positive_active": 32,
+          "test_positive_active": 11
+        },
+        {
+          "model": "finetuned",
+          "rank": 5,
+          "feature": 69,
+          "train_auc": 0.6341189674523008,
+          "test_auc": 0.5104166666666666,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "finetuned",
+          "rank": 6,
+          "feature": 1249,
+          "train_auc": 0.6273849607182941,
+          "test_auc": 0.4166666666666667,
+          "train_positive_active": 15,
+          "test_positive_active": 2
+        },
+        {
+          "model": "finetuned",
+          "rank": 7,
+          "feature": 1106,
+          "train_auc": 0.6262626262626263,
+          "test_auc": 0.4739583333333333,
+          "train_positive_active": 14,
+          "test_positive_active": 5
+        },
+        {
+          "model": "finetuned",
+          "rank": 8,
+          "feature": 2874,
+          "train_auc": 0.621773288439955,
+          "test_auc": 0.625,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "finetuned",
+          "rank": 9,
+          "feature": 4957,
+          "train_auc": 0.6206509539842873,
+          "test_auc": 0.53125,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        },
+        {
+          "model": "finetuned",
+          "rank": 10,
+          "feature": 4781,
+          "train_auc": 0.6184062850729517,
+          "test_auc": 0.625,
+          "train_positive_active": 33,
+          "test_positive_active": 12
+        }
+      ],
+      "best_test_auc_among_train_selected": 0.625,
+      "median_test_auc_among_train_selected": 0.53125
+    }
+  },
+  "box_head_test_metrics_same_cohort": {
+    "frozen": {
+      "test_auc": 0.7291666666666666,
+      "test_average_precision": 0.8441815741448093
+    },
+    "finetuned": {
+      "test_auc": 0.7916666666666666,
+      "test_average_precision": 0.8916661826878545
+    }
+  }
+}
