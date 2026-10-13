@@ -16,3 +16,11 @@ The fine-tuned SAE did not improve kimono box quality. Flower objectness ranking
 These numbers measure agreement with C2C's unreviewed boxes. The flower test set has only 13 positives, and the SAE feature grid is coarse at 16 x 16. The model predicts one union box per image/concept, so it cannot reproduce multiple separate C2C boxes. This is a first pipeline result, not evidence of independent object detection or an improvement over C2C.
 
 Artifacts are kept locally under the ignored `runs/` and `residuals/` folders: fine-tuned checkpoint `runs/c2c_box_sae_003`, frozen baseline `runs/frozen_sae_box_baseline_002`, and per-image predictions in each run's `test_predictions.csv`.
+
+## Flower feature intervention test
+
+Run date: 2026-10-12. We ranked SAE features by their contribution to the trained flower objectness head on the East Asian woman training subset (33 C2C-positive, 27 negative), then attenuated the top three features (940, 2810, 1855) during one-step SDXL generation. Evaluation used 20 held-out matched prompts: 12 C2C-positive and 8 C2C-negative. Every source image replayed with exact RGB equality. Strength 1 was an exact no-op. We compared strength 0 (zero the selected features), strength 0.5, and a zeroed activity-matched random feature (3459).
+
+The target-feature ablation changed pixels substantially (mean RGB MAE 11.01/255 at strength 0, 6.21/255 at 0.5); the random-feature control averaged 1.52/255. Changes were similar for C2C-positive and negative examples, which suggests these features are not specific to flower presence. In the inspected C2C-positive examples, the flower hair ornament remained visible after ablation. The intervention altered other appearance details, including clothing and facial appearance. So this test did not remove the flower, despite changing the image.
+
+This is a small exploratory causal test using a learned detector head to select SAE features. C2C labels are assumed correct, and pixel MAE measures overall image change rather than flower removal. Visual comparisons and per-image pixel metrics are in [`visualizations/flower_intervention_001/`](visualizations/flower_intervention_001/).
