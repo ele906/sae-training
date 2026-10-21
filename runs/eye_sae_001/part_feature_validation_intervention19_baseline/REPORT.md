@@ -15,6 +15,12 @@ The tuning folders contain 19 distinct feature IDs with complete 20-image-per-ca
 
 Feature 1664 has the clearest part-specific pattern in this test: strong positive nose contrast and negative eyebrow contrast. Feature 527 is associated with several annotated regions, so it is not eye-specific. Feature 3725 also has positive contrasts across multiple regions. Full estimates for all 76 feature-region pairs are in `heldout_feature_validation.csv`.
 
+## Qualitative held-out examples
+
+The panels show the original SAE feature maps on held-out portraits. Cyan outlines mark the detected face box; yellow outlines mark the target part box. These examples were selected from test images with the highest target-box mean activation for each shown feature/part pair, so they are illustrative rather than representative. The quantitative table above uses all eligible held-out images.
+
+![Held-out SAE feature activation maps with automatic face and part boxes](images/feature_part_examples.jpg)
+
 ## Interpretation and limits
 
 This supports spatial association for a few features, especially feature 1664 with the annotated nose region. It does not establish a semantic label or causal editing behavior. The nose estimate is based on 13 test portraits, and the ear estimate on 18. Automatic boxes are unreviewed; low coverage for small facial parts makes the comparisons noisy. The 95% intervals are unadjusted across 76 comparisons, so treat the rankings as exploratory rather than confirmatory. Several features also have near-zero activations or negative contrasts.

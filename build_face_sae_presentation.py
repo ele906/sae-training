@@ -272,7 +272,21 @@ card(slide, 6.78, 6.2, 5.65, .68, "Broader associations", "Features 527 and 3725
 textbox(slide, "Contrasts are SAE activation units, not percentages or correlation coefficients.",
         .88, 6.96, 11.4, .2, 10, MUTED)
 
-# 10 — caveats / next steps
+# 10 — qualitative heatmap examples
+slide = new_slide("Jet heatmaps show example feature locations",
+                  "Held-out portraits · cyan = detected face · yellow = annotated part",
+                  "These are illustrative high-activation examples, selected from eligible held-out test portraits for display. The heatmap is normalized within each detected face box. The examples help inspect spatial alignment, but do not estimate how often a feature localizes to a part; those estimates are in the preceding table and use all eligible test images. Boxes are automatic and unreviewed.")
+examples = ROOT / "sae-training/runs/eye_sae_001/part_feature_validation_intervention19_baseline/images/feature_part_examples.jpg"
+add_image_fit(slide, examples, .65, 1.68, 5.65, 5.25)
+textbox(slide, "Feature 1664", 6.65, 1.9, 5.7, .38, 19, NAVY, True)
+textbox(slide, "The strongest activation in this example falls around the annotated nose box, consistent with its high held-out nose contrast.",
+        6.67, 2.38, 5.65, 1.05, 16, INK)
+textbox(slide, "Features 527 and 3725", 6.65, 3.85, 5.7, .38, 19, NAVY, True)
+textbox(slide, "Their heatmaps spread across more of the face, matching their positive contrasts in several regions rather than a single-part pattern.",
+        6.67, 4.33, 5.65, 1.05, 16, INK)
+card(slide, 6.65, 5.85, 5.55, .82, "How to read these panels", "Examples selected for visibility; aggregate table uses the full held-out sample.", fill=PALE, body_size=12)
+
+# 11 — caveats / next steps
 slide = new_slide("What we can claim—and what comes next", "The evidence supports a useful localization result, with clear limits",
                   "Close with a careful summary. Both fine-tuning runs improved held-out SAE activation reconstruction. The region-specific candidates show positive held-out activation contrast. However, the automatic boxes are unreviewed and coverage varies sharply; nose has only 13 test images in four categories. The next steps are human review of part annotations, more usable nose/ear boxes, then evaluating interventions with direct outcome measures before making fairness claims.")
 card(slide, .85, 1.95, 5.6, 1.5, "Supported by these experiments", "• Face and eye fine-tuning lowered held-out activation MSE.\n• Candidate features had positive held-out part-box contrast.", fill=PALE, body_size=14)
